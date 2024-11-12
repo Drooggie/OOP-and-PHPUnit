@@ -69,24 +69,33 @@ final class RouterTest extends TestCase
     }
 
     /** @test 
-     *  @dataProvider routeNotFoundCases
+     *  @dataProvider Tests\Provider\RouterDataProvider::routeNotFoundCases
      */
     public function route_throw_exception(
         string $requestUri,
         string $requestMethod,
-    ) {
-        $this->obj->get('Users', ['index', 'store']);
-        $this->obj->put('Users', ['index', 'store']);
+    ): void {
+
+        $userObj = new class
+        {
+            public function delete()
+            {
+                return true;
+            }
+        };
+
+        $this->obj->get('Users', [$userObj::class, 'store']);
+        $this->obj->post('Users', ['index', 'store']);
 
         $this->expectException(RouteNotFoundException::class);
         $this->obj->resolve($requestUri, $requestMethod);
     }
 
-    public function routeNotFoundCases(): array
+    /** @test */
+    public function it_resolves_route_from_a_closure(): void
     {
-        return [
-            'get' => ['Users' => ['index', 'store']],
-            'put' => ['Users' => ['index', 'store']],
-        ];
+        $this->obj->get('/users', fn() => [1, 2, 3]);
+
+        $this->assertEquals([1, 2, 3], $this->obj->resolve('/users', 'get'));
     }
 }
